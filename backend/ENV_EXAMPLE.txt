@@ -1,4 +1,0 @@
-PORT=4000
-JWT_SECRET=supersecretjwt
-DATABASE_URL="mysql://user:password@localhost:3306/medical_app"
-

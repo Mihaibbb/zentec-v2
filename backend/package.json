@@ -9,7 +9,8 @@
     "postinstall": "",
     "db:apply": "mysql < sql/schema.sql",
     "db:seed": "tsx src/seed.ts",
-    "create:super-admin": "tsx src/scripts/createSuperAdmin.ts"
+    "create:super-admin": "tsx src/scripts/createSuperAdmin.ts",
+    "run-schema": "tsx scripts/runSchema.ts"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
