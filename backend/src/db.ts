@@ -3,11 +3,11 @@ import { env } from "./env.js";
 
 export const pool = mysql.createPool({
 	uri: env.DATABASE_URL,
-	connectionLimit: 10,
+	connectionLimit: 50,
 	waitForConnections: true
 });
 
 export async function query<T = any>(sql: string, params?: any[]): Promise<[T[], any]> {
-	return pool.query(sql, params);
+	return pool.query<any>(sql, params) as Promise<[T[], any]>;
 }
 

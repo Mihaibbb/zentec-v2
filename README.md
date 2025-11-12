@@ -2,7 +2,7 @@
 
 This repository contains a full‑stack, multi‑tenant medical appointment application with:
 
-- Backend: Node.js, Express, Prisma (MySQL)
+- Backend: Node.js, Express, MySQL
 - Frontend: React (Vite + TypeScript + Tailwind), React Router, React Big Calendar (drag & drop)
 
 It supports two modules:
@@ -67,8 +67,6 @@ Root:
 Backend workspace:
 
 - `npm run dev` – run Express + ts-node-dev
-- `npm run db:push` – `prisma db push`
-- `npm run db:migrate` – `prisma migrate dev`
 - `npm run db:seed` – run seed data
 
 

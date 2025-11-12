@@ -8,6 +8,6 @@ export const env = {
 };
 
 if (!env.DATABASE_URL) {
-	console.warn("DATABASE_URL is not set. Prisma will fail without it.");
+	console.warn("DATABASE_URL is not set.");
 }
 
