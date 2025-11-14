@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import { env } from "../env";
-import { AppRole } from "../utils/roles";
+import { env } from "../env.js";
+import { AppRole } from "../utils/roles.js";
 
 export interface AuthUser {
 	id: number;
@@ -20,7 +20,7 @@ declare global {
 }
 
 export function signToken(user: AuthUser) {
-	return jwt.sign(user, env.JWT_SECRET as jwt.Secret | jwt.PrivateKey, { expiresIn: "7d" });
+	return jwt.sign(user, env.JWT_SECRET!, { expiresIn: "7d" });
 }
 
 export function authRequired(req: Request, res: Response, next: NextFunction) {
@@ -28,7 +28,7 @@ export function authRequired(req: Request, res: Response, next: NextFunction) {
 	if (!header) return res.status(401).json({ error: "Missing Authorization" });
 	const token = header.replace("Bearer ", "");
 	try {
-		const decoded = jwt.verify(token, env.JWT_SECRET as jwt.Secret | jwt.PublicKey) as AuthUser;
+		const decoded = jwt.verify(token, env.JWT_SECRET!) as AuthUser;
 		req.user = decoded;
 		next();
 	} catch {
