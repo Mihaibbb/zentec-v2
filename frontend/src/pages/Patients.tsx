@@ -3,9 +3,11 @@ import { api, getCurrentUser } from "../lib/api";
 import { Link } from "react-router-dom";
 import { Search, Pencil, Trash2, Plus, Download, Upload, ChevronDown, ChevronUp } from "lucide-react";
 import ConfirmationModal from "../components/ConfirmationModal";
+import LoadingSpinner from "../components/LoadingSpinner";
 import Papa from "papaparse";
 
 export default function Patients() {
+  const [loading, setLoading] = useState(true);
   const [patients, setPatients] = useState<any[]>([]);
   const user = getCurrentUser();
   const clinicId = user?.clinicId;
@@ -31,7 +33,10 @@ export default function Patients() {
 
   useEffect(() => {
     if (!clinicId) return;
-    api.get("/patients", { params: { clinicId } }).then(r => setPatients(r.data));
+    setLoading(true);
+    api.get("/patients", { params: { clinicId } })
+      .then(r => setPatients(r.data))
+      .finally(() => setLoading(false));
   }, [clinicId]);
 
   function handleExportCSV() {
@@ -110,6 +115,10 @@ export default function Patients() {
         alert("Error parsing CSV file: " + error.message);
       }
     });
+  }
+
+  if (loading) {
+    return <LoadingSpinner fullScreen />;
   }
 
   return (

@@ -3,6 +3,7 @@ import { api, getCurrentUser } from "../lib/api";
 import { useNavigate, useParams } from "react-router-dom";
 import ConfirmationModal from "../components/ConfirmationModal";
 import { getEmailError, getRequiredError, emailRegex } from "../utils/validation";
+import { ChevronLeft } from "lucide-react";
 
 export default function DoctorEdit() {
   const { id } = useParams<{ id: string }>();
@@ -71,7 +72,18 @@ export default function DoctorEdit() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl lg:text-2xl font-semibold text-center mb-4 lg:mb-8">{isEdit ? "Edit Doctor" : "Add Doctor"}</h1>
+      <div className="flex items-center gap-4 mb-4 lg:mb-8">
+        <button
+          type="button"
+          onClick={() => navigate("/doctors")}
+          className="flex items-center justify-center w-10 h-10 lg:w-12 lg:h-12 rounded-lg border border-slate-700 hover:bg-slate-800 transition-colors flex-shrink-0"
+          aria-label="Go back"
+        >
+          <ChevronLeft size={20} className="lg:w-6 lg:h-6" />
+        </button>
+        <h1 className="text-xl lg:text-2xl font-semibold flex-1 text-center">{isEdit ? "Edit Doctor" : "Add Doctor"}</h1>
+        <div className="w-10 h-10 lg:w-12 lg:h-12 flex-shrink-0" /> {/* Spacer for centering */}
+      </div>
       <form 
         onSubmit={handleSubmit} 
         className="rounded-xl p-4 lg:p-6 space-y-4"
@@ -136,15 +148,8 @@ export default function DoctorEdit() {
             />
           </div>
         </div>
-        <div className="pt-2 flex gap-2">
-          <button 
-            type="button"
-            onClick={() => navigate("/doctors")} 
-            className="px-4 py-2 rounded-lg border border-slate-700 hover:bg-slate-800 transition-colors"
-          >
-            Cancel
-          </button>
-          <button disabled={saving} type="submit" className="btn flex-1">
+        <div className="pt-2">
+          <button disabled={saving} type="submit" className="btn w-full">
             {saving ? "Saving..." : isEdit ? "Save Changes" : "Create Doctor"}
           </button>
         </div>

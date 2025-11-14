@@ -3,7 +3,7 @@ import { api, getCurrentUser } from "../lib/api";
 import { useNavigate } from "react-router-dom";
 import CalendarInput from "../components/Calendar";
 import { getEmailError, getPhoneError, getRequiredError, phoneRegex, emailRegex } from "../utils/validation";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, ChevronLeft } from "lucide-react";
 
 export default function PatientNew() {
   const user = getCurrentUser();
@@ -44,7 +44,18 @@ export default function PatientNew() {
 
   return (
     <div className="space-y-4 lg:space-y-6">
-      <h1 className="text-xl lg:text-2xl font-semibold text-center mb-4 lg:mb-8">Create new patient</h1>
+      <div className="flex items-center gap-4 mb-4 lg:mb-8">
+        <button
+          type="button"
+          onClick={() => navigate("/patients")}
+          className="flex items-center justify-center w-10 h-10 lg:w-12 lg:h-12 rounded-lg border border-slate-700 hover:bg-slate-800 transition-colors flex-shrink-0"
+          aria-label="Go back"
+        >
+          <ChevronLeft size={20} className="lg:w-6 lg:h-6" />
+        </button>
+        <h1 className="text-xl lg:text-2xl font-semibold flex-1 text-center">Create new patient</h1>
+        <div className="w-10 h-10 lg:w-12 lg:h-12 flex-shrink-0" /> {/* Spacer for centering */}
+      </div>
       <form 
         onSubmit={save} 
         className="rounded-xl p-4 lg:p-6 space-y-4"

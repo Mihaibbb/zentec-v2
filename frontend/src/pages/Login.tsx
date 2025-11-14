@@ -4,8 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { getEmailError, emailRegex } from "../utils/validation";
 
 export default function Login() {
-  const [email, setEmail] = useState("super@admin.com");
-  const [password, setPassword] = useState("superadmin");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [emailError, setEmailError] = useState<string | null>(null);
   const navigate = useNavigate();

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { api, getCurrentUser, logout } from "../lib/api";
 import { useNavigate } from "react-router-dom";
 import HourPicker from "../components/HourPicker";
+import LoadingSpinner from "../components/LoadingSpinner";
 import { LogOut } from "lucide-react";
 
 export default function Profile() {
@@ -54,12 +55,7 @@ export default function Profile() {
   }, []);
 
   if (loading) {
-    return (
-      <div className="space-y-4">
-        <h1 className="text-4xl font-semibold text-center mb-8">Profile</h1>
-        <div className="card">Loading...</div>
-      </div>
-    );
+    return <LoadingSpinner fullScreen />;
   }
 
   return (

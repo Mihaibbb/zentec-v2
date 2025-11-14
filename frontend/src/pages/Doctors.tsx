@@ -3,11 +3,13 @@ import { api, getCurrentUser } from "../lib/api";
 import { Link } from "react-router-dom";
 import { Search, Pencil, Trash2, Plus, Download, Upload } from "lucide-react";
 import ConfirmationModal from "../components/ConfirmationModal";
+import LoadingSpinner from "../components/LoadingSpinner";
 import Papa from "papaparse";
 
 export default function Doctors() {
   const user = getCurrentUser();
   const clinicId = user?.clinicId;
+  const [loading, setLoading] = useState(true);
   const [doctors, setDoctors] = useState<any[]>([]);
   const [q, setQ] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<{ isOpen: boolean; doctorId: number | null; doctorName: string }>({
@@ -18,8 +20,13 @@ export default function Doctors() {
 
   async function load() {
     if (!clinicId) return;
-    const { data } = await api.get("/doctors", { params: { clinicId } });
-    setDoctors(data);
+    setLoading(true);
+    try {
+      const { data } = await api.get("/doctors", { params: { clinicId } });
+      setDoctors(data);
+    } finally {
+      setLoading(false);
+    }
   }
   useEffect(() => { load(); }, [clinicId]);
 
@@ -90,6 +97,10 @@ export default function Doctors() {
         alert("Error parsing CSV file: " + error.message);
       }
     });
+  }
+
+  if (loading) {
+    return <LoadingSpinner fullScreen />;
   }
 
   return (

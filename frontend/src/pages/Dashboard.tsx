@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { api, getCurrentUser } from "../lib/api";
 import MultiSelect from "../components/MultiSelect";
 import CalendarInput from "../components/Calendar";
+import LoadingSpinner from "../components/LoadingSpinner";
 import { Download, X } from "lucide-react";
 import moment from "moment";
 import Papa from "papaparse";
@@ -10,6 +11,7 @@ export default function Dashboard() {
   const user = getCurrentUser();
   const clinicId = user?.clinicId;
   const isDoctor = user?.role?.toLocaleLowerCase() === "doctor";
+  const [loading, setLoading] = useState(true);
   const [metrics, setMetrics] = useState({ appointments: 0, newPatients: 0, earnings: 0 });
   const [selectedDoctorIds, setSelectedDoctorIds] = useState<number[]>([]);
   const [doctors, setDoctors] = useState<any[]>([]);
@@ -25,14 +27,19 @@ export default function Dashboard() {
   useEffect(() => {
     if (!clinicId) return;
     async function load() {
-      const { data: docs } = await api.get("/doctors", { params: { clinicId } });
-      setDoctors(docs);
-      const { data: appts } = await api.get("/appointments", { params: { clinicId } });
-      setAllAppts(appts);
-      const { data: pats } = await api.get("/patients", { params: { clinicId } });
-      setPatients(pats);
-      if (isDoctor) {
-        setSelectedDoctorIds([docs.find((d: any) => d.userId === user?.id)?.id]);
+      setLoading(true);
+      try {
+        const { data: docs } = await api.get("/doctors", { params: { clinicId } });
+        setDoctors(docs);
+        const { data: appts } = await api.get("/appointments", { params: { clinicId } });
+        setAllAppts(appts);
+        const { data: pats } = await api.get("/patients", { params: { clinicId } });
+        setPatients(pats);
+        if (isDoctor) {
+          setSelectedDoctorIds([docs.find((d: any) => d.userId === user?.id)?.id]);
+        }
+      } finally {
+        setLoading(false);
       }
     }
     load();
@@ -168,6 +175,10 @@ export default function Dashboard() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  }
+
+  if (loading) {
+    return <LoadingSpinner fullScreen />;
   }
 
   return (

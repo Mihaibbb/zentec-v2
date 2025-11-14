@@ -12,6 +12,7 @@ import TimePicker from "../components/TimePicker";
 import CalendarInput from "../components/Calendar";
 import ConfirmationModal from "../components/ConfirmationModal";
 import WarningModal from "../components/WarningModal";
+import LoadingSpinner from "../components/LoadingSpinner";
 
 const localizer = momentLocalizer(moment);
 const DnDCalendar = withDragAndDrop(Calendar as any);
@@ -27,6 +28,7 @@ type EventItem = {
 export default function Schedule() {
   const user = getCurrentUser();
   const clinicId = user?.clinicId;
+  const [loading, setLoading] = useState(true);
   const [resources, setResources] = useState<Resource[]>([]);
   const [events, setEvents] = useState<EventItem[]>([]);
   const [allDoctors, setAllDoctors] = useState<any[]>([]);
@@ -56,10 +58,15 @@ export default function Schedule() {
   const [warningMessage, setWarningMessage] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
 
-  async function load() {
+  useEffect(() => { if (clinicId) load(); }, [selectedDoctorIds, clinicId]);
+
+
+  async function load(silent = false) {
     if (!clinicId) return;
-    const { data: doctors } = await api.get("/doctors", { params: { clinicId } });
-    setAllDoctors(doctors);
+    if (!silent) setLoading(true);
+    try {
+      const { data: doctors } = await api.get("/doctors", { params: { clinicId } });
+      setAllDoctors(doctors);
     
     // Set default doctor selection based on user role (only once)
     if (!defaultSelectionSet && doctors.length > 0) {
@@ -90,11 +97,13 @@ export default function Schedule() {
       end: new Date(a.end),
       resourceId: a.doctorId
     })));
-    const { data: pts } = await api.get("/patients", { params: { clinicId } });
-    setPatients(pts);
+      const { data: pts } = await api.get("/patients", { params: { clinicId } });
+      setPatients(pts);
+    } finally {
+      if (!silent) setLoading(false);
+    }
+    
   }
-
-  useEffect(() => { if (clinicId) load(); }, [selectedDoctorIds, clinicId]);
 
   const draggableAccessor = useMemo(() => {
     return (event: EventItem) => {
@@ -106,23 +115,94 @@ export default function Schedule() {
   async function onEventDrop({ event, start, end, resourceId }: any) {
     // block dragging into past
     if (end < new Date()) return;
-    await api.patch(`/appointments/${event.id}`, {
-      start,
-      end,
-      doctorId: resourceId
-    });
-    await load();
+    
+    // Optimistic update - update UI immediately
+    setEvents(prevEvents => 
+      prevEvents.map(e => 
+        e.id === event.id 
+          ? { ...e, start, end, resourceId }
+          : e
+      )
+    );
+    
+    // Sync with server in background
+    try {
+      await api.patch(`/appointments/${event.id}`, {
+        start,
+        end,
+        doctorId: resourceId
+      });
+      // Update allAppointments to keep it in sync
+      setAllAppointments(prev => 
+        prev.map(a => 
+          a.id === event.id 
+            ? { ...a, start: start.toISOString(), end: end.toISOString(), doctorId: resourceId }
+            : a
+        )
+      );
+    } catch (error) {
+      // Revert on error
+      setEvents(prevEvents => 
+        prevEvents.map(e => 
+          e.id === event.id 
+            ? { ...e, start: new Date(event.start), end: new Date(event.end), resourceId: event.resourceId }
+            : e
+        )
+      );
+      console.error("Failed to update appointment:", error);
+      // Show error to user
+      setWarningMessage("Failed to update appointment. Please try again.");
+      setShowWarning(true);
+    }
   }
 
   async function onEventResize({ event, start, end }: any) {
     if (end < new Date()) return;
-    await api.patch(`/appointments/${event.id}`, { start, end });
-    await load();
+    
+    // Optimistic update - update UI immediately
+    setEvents(prevEvents => 
+      prevEvents.map(e => 
+        e.id === event.id 
+          ? { ...e, start, end }
+          : e
+      )
+    );
+    
+    // Sync with server in background
+    try {
+      await api.patch(`/appointments/${event.id}`, { start, end });
+      // Update allAppointments to keep it in sync
+      setAllAppointments(prev => 
+        prev.map(a => 
+          a.id === event.id 
+            ? { ...a, start: start.toISOString(), end: end.toISOString() }
+            : a
+        )
+      );
+    } catch (error) {
+      // Revert on error
+      setEvents(prevEvents => 
+        prevEvents.map(e => 
+          e.id === event.id 
+            ? { ...e, start: new Date(event.start), end: new Date(event.end) }
+            : e
+        )
+      );
+      console.error("Failed to resize appointment:", error);
+      // Show error to user
+      setWarningMessage("Failed to resize appointment. Please try again.");
+      setShowWarning(true);
+    }
   }
 
   function onSelectSlot(slot: any) {
     const { start, end, resourceId } = slot;
-    if (end < new Date()) return;
+    // Check if the selected slot is in the past
+    if (end < new Date()) {
+      setWarningMessage("You cannot create appointments in the past!");
+      setShowWarning(true);
+      return;
+    }
     const date = moment(start).format("YYYY-MM-DD");
     const st = moment(start).format("HH:mm");
     const en = moment(end).format("HH:mm");
@@ -171,6 +251,20 @@ export default function Schedule() {
     }
     const start = new Date(`${form.date}T${form.start}:00`);
     const end = new Date(`${form.date}T${form.end}:00`);
+
+    // Check if end time is before start time
+    if (end < start) {
+      setWarningMessage("End time cannot be before start time!");
+      setShowWarning(true);
+      return;
+    }
+    
+    // Check if creating an appointment in the past
+    if (!editingAppointmentId && end < new Date()) {
+      setWarningMessage("You cannot create appointments in the past!");
+      setShowWarning(true);
+      return;
+    }
     
     // Don't allow editing past appointments
     if (editingAppointmentId && isPastAppointment) {
@@ -178,6 +272,14 @@ export default function Schedule() {
       setShowWarning(true);
       return;
     }
+    
+    // Check if updating an appointment to a past time
+    if (editingAppointmentId && end < new Date()) {
+      setWarningMessage("You cannot update appointments to a past time!");
+      setShowWarning(true);
+      return;
+    }
+
     
     if (editingAppointmentId) {
       // Update existing appointment
@@ -210,6 +312,10 @@ export default function Schedule() {
     setIsPastAppointment(false);
     setForm({ title: "", doctorId: null, patientId: null, date: "", start: "10:00", end: "11:00", cost: 0, notes: "" });
     await load();
+  }
+
+  if (loading) {
+    return <LoadingSpinner fullScreen />;
   }
 
   return (
